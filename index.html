@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>IBRAGAME — Игровой Хаб</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f172a; --accent:#6bb8ff; --text:#ffffff; --glass: rgba(255,255,255,0.04); --brightness:1;
+      --gold:#ffd27a; --muted:#9fb0c9; --ok:#2ecc71; --warn:#ff9d57;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; background: radial-gradient(1200px 800px at 10% 0%, #0e1630 0%, #0b1220 50%, #071022 100%); color:var(--text); -webkit-font-smoothing:antialiased}
+    .app{max-width:1200px;margin:18px auto;padding:16px;filter:brightness(var(--brightness));}
+
+    .title-wrap{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:12px}
+    .logo{font-weight:900;font-size:56px;letter-spacing:2px;padding:6px 12px;border-radius:14px;position:relative}
+    .logo .name{display:inline-block;background:linear-gradient(90deg,#ff6b6b,#ffb86b,#ffd86b,#6bffb8,#6bb8ff,#b86bff,#ff6bb8);background-size:400% 400%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sl 10s linear infinite}
+    @keyframes sl{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    .logo-sub{font-size:13px;opacity:0.86}
+    .author-wrap{display:flex;align-items:center;gap:8px}
+    .author-link{font-weight:700;color:transparent;background:linear-gradient(90deg,#b86bff,#6bb8ff,#6bffb8);-webkit-background-clip:text;background-clip:text;padding:6px 10px;border-radius:10px;text-decoration:none;position:relative;box-shadow:0 6px 20px rgba(107,184,255,0.06);transition:transform .18s ease,box-shadow .18s ease}
+    .author-link:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(107,184,255,0.18)}
+    .top-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+    .btn{background:var(--card);padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;box-shadow:0 6px 18px rgba(2,6,23,0.6);transition:transform .14s ease,opacity .14s,box-shadow .18s}
+    .btn:active{transform:translateY(2px)}
+    .btn.glow{box-shadow:0 8px 22px rgba(107,184,255,0.06)}
+    .btn:hover{box-shadow:0 18px 48px rgba(107,184,255,0.12);transform:translateY(-3px)}
+
+    .grid{display:grid;grid-template-columns:repeat(2, minmax(260px,1fr));gap:16px;align-items:stretch}
+    @media (max-width:680px){ .grid{grid-template-columns:1fr} }
+    .wip-card{grid-column:1 / -1; justify-self:center; max-width:520px; width:100%}
+    @media (min-width:1000px){ .grid{grid-template-columns:repeat(3, minmax(260px,1fr))} }
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));padding:18px;border-radius:18px;min-height:220px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,0.45)}
+    .card:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 22px 48px rgba(2,6,23,0.75)}
+    .card h3{margin:6px 0 6px 0;color:#fff}
+    .card .muted{color:#fff;opacity:.9}
+    .card .play{align-self:flex-end}
+
+    .banner{position:relative;height:120px;border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid rgba(255,255,255,0.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.03)}
+    .banner canvas{position:absolute;inset:0;width:100%;height:100%}
+    .banner .title{position:absolute;left:14px;bottom:14px;font-weight:900;letter-spacing:.5px}
+    .banner .title .t1{font-size:22px;color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.35)}
+    .banner .title .t2{font-size:12px;opacity:.9;color:#c8d7ff}
+    .banner .cta{position:absolute;right:14px;bottom:14px;padding:10px 14px;border-radius:12px;background:#3a63ff;color:#fff;font-weight:800;box-shadow:0 12px 28px rgba(58,99,255,.25)}
+    .card .meta-block{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .meta{margin-top:12px;opacity:0.9;font-size:13px;color:#fff}
+
+    /* Overlay */
+    .overlay{position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85));display:none;align-items:center;justify-content:center;z-index:9999;pointer-events:none}
+    .overlay.open{display:flex;pointer-events:auto}
+    .modal{width:96vw;max-width:1320px;background:linear-gradient(180deg, rgba(8,12,22,0.98), rgba(6,10,16,0.98));padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 30px 90px rgba(2,6,23,0.85);display:flex;flex-direction:column;gap:10px}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .modal-header .actions{display:flex;gap:8px}
+    .modal-body{display:grid;grid-template-columns:1fr 300px;gap:12px}
+    .game-area{width:100%;height:clamp(520px, 80vh, 88vh);background:#061423;border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;touch-action:none}
+    .game-area canvas{touch-action:none}
+    .side-panel{padding:10px;background:rgba(255,255,255,0.03);border-radius:12px}
+    @media (max-width:1000px){ .modal-body{grid-template-columns:1fr}.side-panel{display:none}.game-area{height:clamp(480px, 78vh, 88vh)} }
+
+    label{display:block;font-size:13px;margin-bottom:6px;color:#fff}
+    input[type=range],select,input{width:100%}
+
+    .ach-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .ach{background:rgba(255,255,255,0.06);padding:10px;border-radius:12px;display:flex;align-items:center;gap:10px}
+    .ach.locked{opacity:0.5}
+    .ach .ico{width:42px;height:42px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02));display:flex;align-items:center;justify-content:center;font-weight:800}
+
+    .muted{opacity:0.92; color:#fff}
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="title-wrap">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="logo"><span class="name">IBRAGAME</span></div>
+        <div class="logo-sub muted">Мини-игры • Настройки • Ачивки</div>
+      </div>
+      <div class="author-wrap">
+        <a class="author-link" id="authorLink" href="https://www.instagram.com/ibarrwqm/" target="_blank" rel="noopener noreferrer">Создатель: @ibarrwqm</a>
+      </div>
+    </div>
+
+    <div class="top-controls">
+      <div class="btn glow" id="settingsBtn">Настройки</div>
+      <div class="btn glow" id="achBtn">Ачивки</div>
+      <div style="margin-left:auto" class="muted">Ник: <span id="dispNick">Гость</span></div>
+    </div>
+
+    <!-- Меню -->
+    <div class="grid" id="menuGrid">
+      <div class="card" data-game="flappy">
+        <div class="banner" data-open="flappy">
+          <canvas class="banner-canvas" data-preview="flappy"></canvas>
+          <div class="title"><div class="t1">FLAPPY BIRD</div><div class="t2">IBRAGAME</div></div>
+          <div class="cta">PLAY</div>
+        </div>
+        <div class="meta-block">
+          <div>
+            <h3>Flappy Bird</h3>
+            <div class="muted">Плавная физика • улучшенные трубы и птица</div>
+          </div>
+          <div class="btn play glow" data-open="flappy">Играть</div>
+        </div>
+      </div>
+
+      <div class="card" data-game="stack">
+        <div class="banner" data-open="stack">
+          <canvas class="banner-canvas" data-preview="stack"></canvas>
+          <div class="title"><div class="t1">STACK</div><div class="t2">IBRAGAME</div></div>
+          <div class="cta">PLAY</div>
+        </div>
+        <div class="meta-block">
+          <div>
+            <h3>Stack</h3>
+            <div class="muted">Камера • новые цвета • честный рез</div>
+          </div>
+          <div class="btn play glow" data-open="stack">Играть</div>
+        </div>
+      </div>
+
+      <div class="card" data-game="basket">
+        <div class="banner" data-open="basket">
+          <canvas class="banner-canvas" data-preview="basket"></canvas>
+          <div class="title"><div class="t1">BASKETBALL</div><div class="t2">IBRAGAME</div></div>
+          <div class="cta">PLAY</div>
+        </div>
+        <div class="meta-block">
+          <div>
+            <h3>Баскетбол</h3>
+            <div class="muted">Корт, корзина с сеткой, прицел</div>
+          </div>
+          <div class="btn play glow" data-open="basket">Играть</div>
+        </div>
+      </div>
+
+      <div class="card" data-game="clicker">
+        <div class="banner" data-open="clicker">
+          <canvas class="banner-canvas" data-preview="clicker"></canvas>
+          <div class="title"><div class="t1">КЛИКЕР</div><div class="t2">IBRAGAME</div></div>
+          <div class="cta">PLAY</div>
+        </div>
+        <div class="meta-block">
+          <div>
+            <h3>Кликер</h3>
+            <div class="muted">Понятный интерфейс • автокликер 2000/мин</div>
+          </div>
+          <div class="btn play glow" data-open="clicker">Играть</div>
+        </div>
+      </div>
+
+      <div class="card wip-card">
+        <div class="banner">
+          <canvas class="banner-canvas" data-preview="wip"></canvas>
+          <div class="title"><div class="t1">СКОРО</div><div class="t2">Новые мини-игры</div></div>
+          <div class="cta" style="background:#3b3f54">SOON</div>
+        </div>
+        <div class="meta-block">
+          <div>
+            <h3>В разработке</h3>
+            <div class="muted">Скоро новые мини-игры</div>
+          </div>
+          <div class="btn">Скоро</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="meta">Подсказка: нажми <b>R</b> в игре, чтобы перезапустить. Все настройки и прогресс сохраняются локально.</div>
+  </div>
+
+  <!-- Overlay: Game -->
+  <div class="overlay" id="overlay">
+    <div class="modal" role="dialog">
+      <div class="modal-header">
+        <div id="modalTitle">Игра</div>
+        <div class="actions">
+          <button class="btn glow" id="restartBtn">Перезапуск</button>
+          <button class="btn glow" id="backBtn">Назад</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="game-area" id="gameArea"><canvas id="gameCanvas" style="width:100%;height:100%"></canvas></div>
+        <div class="side-panel" id="sidePanel">
+          <div><label>Никнейм</label><div id="sideNick" class="muted">-</div></div>
+          <div style="margin-top:8px"><label>Сложность</label><div id="sideDiff" class="muted">-</div></div>
+          <div style="margin-top:10px"><button class="btn glow" id="achInGame">Ачивки</button></div>
+          <div style="margin-top:12px"><label>Рекорд</label><div id="sideRecord" class="muted">-</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="overlay" id="settingsOverlay">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header"><div>Настройки</div><div><button class="btn glow" id="closeSet">Закрыть</button></div></div>
+      <div style="display:grid;gap:10px;padding-top:6px">
+        <label>Никнейм</label>
+        <input id="nickInput" placeholder="Введите никнейм" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:#fff" />
+
+        <label>Сложность</label>
+        <select id="difficulty" style="padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);color:#fff;border:1px solid rgba(255,255,255,0.08)">
+          <option value="easy">Лёгкая</option>
+          <option value="normal">Средняя</option>
+          <option value="hard">Сложная</option>
+        </select>
+
+        <label>Громкость</label>
+        <input type="range" id="volume" min="0" max="1" step="0.01" />
+
+        <label>Яркость</label>
+        <input type="range" id="brightness" min="0.7" max="1.2" step="0.01" />
+
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <button class="btn glow" id="resetBtn">Сброс прогресса</button>
+          <div class="muted">Удалит рекорды и прогресс</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievements -->
+  <div class="overlay" id="achOverlay">
+    <div class="modal" style="max-width:640px">
+      <div class="modal-header"><div>Ачивки</div><div><button class="btn glow" id="closeAch">Закрыть</button></div></div>
+      <div style="padding-top:6px"><div class="ach-grid" id="achGrid"></div></div>
+    </div>
+  </div>
+
+  <script>
+  // ========= Общее хранилище =========
+  const STORAGE_KEY='ibragame_v3_dark_only';
+  const DEFAULTS={
+    nick:'Гость', difficulty:'normal', volume:0.75, brightness:1,
+    flappy_record:0, stack_record:0, basket_record:0,
+    clicker_points:0, clicker_power:1, clicker_upgrade_cost:12, clicker_total:0, clicker_autolocked:false, clicker_autoused:false,
+    played_flappy:0, played_stack:0, played_basket:0, played_clicker:0, basket_streak:0, flappy_score:0, stack_score:0
+  };
+  let state = loadState() || {...DEFAULTS};
+  function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) }
+  function loadState(){ try{const s=localStorage.getItem(STORAGE_KEY);return s?JSON.parse(s):null}catch(e){return null} }
+  document.documentElement.style.setProperty('--brightness', state.brightness);
+
+  // ========= Ссылки на элементы =========
+  const overlay = document.getElementById('overlay');
+  const settingsOverlay = document.getElementById('settingsOverlay');
+  const achOverlay = document.getElementById('achOverlay');
+  const modalTitle = document.getElementById('modalTitle');
+  const backBtn = document.getElementById('backBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const achBtn = document.getElementById('achBtn');
+  const achGrid = document.getElementById('achGrid');
+  const nickInput = document.getElementById('nickInput');
+  const difficultySel = document.getElementById('difficulty');
+  const volumeRange = document.getElementById('volume');
+  const brightnessRange = document.getElementById('brightness');
+  const dispNick = document.getElementById('dispNick');
+  const sideNick = document.getElementById('sideNick');
+  const sideDiff = document.getElementById('sideDiff');
+  const sideRecord = document.getElementById('sideRecord');
+
+  // ========= Аудио =========
+  let audioCtx=null;
+  function ensureAudio(){ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)() } }
+  function tone(freq,dur,vol=0.035,type='sine'){
+    if(state.volume<=0) return; ensureAudio();
+    const o=audioCtx.createOscillator();const g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.value=vol*state.volume;o.connect(g);g.connect(audioCtx.destination);
+    o.start();o.stop(audioCtx.currentTime+dur)
+  }
+  const sfx={ click:()=>tone(880,0.06,0.015,'sine'), tap:()=>tone(520,0.08,0.015,'triangle'), ok:()=>{[880,1100,1320].forEach((f,i)=>setTimeout(()=>tone(f,0.09,0.02,'sine'),i*70))} };
+
+  // ========= Ачивки =========
+  const ACHIEVEMENTS=[
+    {id:'c100',title:'100 кликов',desc:'Сделай 100 кликов в кликере',check:s=>s.clicker_total>=100},
+    {id:'c1000',title:'1000 кликов',desc:'Сделай 1000 кликов',check:s=>s.clicker_total>=1000},
+    {id:'upg1',title:'Апгрейд!',desc:'Купить улучшение тапа',check:s=>s.clicker_power>1},
+    {id:'auto',title:'Автокликер',desc:'Активировать автокликер',check:s=>s.clicker_autoused},
+    {id:'fl10',title:'Flappy 10',desc:'Набери 10 очков',check:s=>s.flappy_score>=10},
+    {id:'st10',title:'Башня 10',desc:'10 блоков в башне',check:s=>s.stack_score>=10},
+    {id:'bk5',title:'Снайпер',desc:'5 попаданий подряд',check:s=>s.basket_streak>=5},
+    {id:'all4',title:'Все игры',desc:'Сыграть во все 4 игры',check:s=>[s.played_flappy,s.played_stack,s.played_basket,s.played_clicker].every(x=>x>0)},
+    {id:'secret',title:'Секрет',desc:'Секретная мини-игра (скоро)',check:s=>false}
+  ];
+  function renderAchievements(){
+    achGrid.innerHTML='';
+    ACHIEVEMENTS.forEach(a=>{
+      const ok=a.check(state); const el=document.createElement('div');
+      el.className='ach'+(ok?'':' locked');
+      el.innerHTML=`<div class="ico">${ok?'✓':'🔒'}</div><div><div style="font-weight:800">${a.title}</div><div class="muted" style="font-size:13px">${a.desc}</div></div>`;
+      achGrid.appendChild(el)
+    })
+  }
+
+  // ========= Настройки =========
+  function applySettingsToUI(){
+    dispNick.textContent=state.nick; nickInput.value=state.nick;
+    difficultySel.value=state.difficulty; volumeRange.value=state.volume; brightnessRange.value=state.brightness;
+    document.documentElement.style.setProperty('--brightness', state.brightness)
+  }
+  applySettingsToUI(); renderAchievements();
+  settingsBtn.addEventListener('click', ()=>{ settingsOverlay.classList.add('open'); sfx.click() });
+  document.getElementById('closeSet').addEventListener('click', ()=>settingsOverlay.classList.remove('open'));
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if(confirm('Сбросить прогресс?')){
+      localStorage.removeItem(STORAGE_KEY); state={...DEFAULTS}; applySettingsToUI(); location.reload()
+    }
+  });
+  achBtn.addEventListener('click', ()=>{ achOverlay.classList.add('open'); renderAchievements(); sfx.click() });
+  document.getElementById('closeAch').addEventListener('click', ()=>achOverlay.classList.remove('open'));
+  nickInput.addEventListener('change', ()=>{ state.nick=nickInput.value||'Гость'; dispNick.textContent=state.nick; saveState() });
+  difficultySel.addEventListener('change', ()=>{ state.difficulty=difficultySel.value; saveState() });
+  volumeRange.addEventListener('input', ()=>{ state.volume=Number(volumeRange.value); saveState() });
+  brightnessRange.addEventListener('input', ()=>{ state.brightness=Number(brightnessRange.value); document.documentElement.style.setProperty('--brightness', state.brightness); saveState() });
+
+  // ========= Меню / окна =========
+  function lockScroll(on){ document.body.style.overflow= on ? 'hidden' : '' }
+
+  document.getElementById('menuGrid').addEventListener('click',(e)=>{
+    const b=e.target.closest('[data-open]'); if(!b) return;
+    openGame(b.dataset.open); sfx.click()
+  });
+
+  const gameArea=document.getElementById('gameArea');
+  const canvas=document.getElementById('gameCanvas');
+  const ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
+  function fitCanvas(){ const dpr=window.devicePixelRatio||1; canvas.width=gameArea.clientWidth*dpr; canvas.height=gameArea.clientHeight*dpr; canvas.style.width='100%'; canvas.style.height='100%'; ctx.setTransform(dpr,0,0,dpr,0,0) }
+  window.addEventListener('resize', fitCanvas); fitCanvas();
+
+  // единый менеджер событий (чтоб корректно снимать обработчики)
+  function makeBinder(){
+    const regs=[];
+    return {
+      on(target,type,handler,opts){ target.addEventListener(type,handler,opts); regs.push({target,type,handler,opts}); },
+      offAll(){ regs.forEach(({target,type,handler,opts})=>target.removeEventListener(type,handler,opts)); regs.length=0; }
+    }
+  }
+
+  let currentEngine=null, currentGameName=null, rafId=null;
+  function stopRAF(){ if(rafId){ cancelAnimationFrame(rafId); rafId=null } }
+
+  function stopCurrentGame(){
+    stopRAF();
+    if(currentEngine && currentEngine.stop){ currentEngine.stop() }
+    currentEngine=null;
+  }
+
+  function getRecord(game){ return state[game+'_record']||0 }
+
+  function openGame(name){
+    overlay.classList.add('open'); lockScroll(true); pausePreviews();
+    modalTitle.textContent=({flappy:'Flappy Bird',stack:'Stack',basket:'Баскетбол',clicker:'Кликер'}[name]||name);
+    sideNick.textContent=state.nick; sideDiff.textContent=state.difficulty; sideRecord.textContent=getRecord(name);
+    currentGameName=name; startGame(name)
+  }
+
+  function startGame(name){
+    stopCurrentGame(); fitCanvas();
+    currentEngine = (name==='flappy')?FlappyEngine() : (name==='stack')?StackEngine() : (name==='basket')?BasketEngine() : ClickerEngine();
+    currentEngine.start();
+  }
+
+  document.getElementById('achInGame').addEventListener('click', ()=>{ achOverlay.classList.add('open') });
+
+  backBtn.addEventListener('click', ()=>{
+    overlay.classList.remove('open'); stopCurrentGame(); sfx.click(); lockScroll(false); resumePreviews()
+  });
+  restartBtn.addEventListener('click', ()=>{ if(currentGameName){ startGame(currentGameName); sfx.ok() } });
+  window.addEventListener('keydown', (e)=>{ if(!overlay.classList.contains('open')) return; if(e.code==='KeyR'){ if(currentGameName) startGame(currentGameName) } });
+
+  // ========= Previews (баннеры) =========
+  const previewCanvases = Array.from(document.querySelectorAll('.banner-canvas'));
+  const previews = new Map();
+  function initPreviews(){
+    previewCanvases.forEach(cv=>{
+      const kind=cv.dataset.preview;
+      const pctx=cv.getContext('2d',{alpha:true,desynchronized:true});
+      const setSize=()=>{
+        const dpr=window.devicePixelRatio||1; cv.width=cv.clientWidth*dpr; cv.height=cv.clientHeight*dpr; pctx.setTransform(dpr,0,0,dpr,0,0)
+      };
+      setSize(); new ResizeObserver(setSize).observe(cv);
+
+      let frame=0, id; function loop(){
+        pctx.clearRect(0,0,cv.width,cv.height);
+        if(kind==='flappy'){
+          const w=cv.clientWidth,h=cv.clientHeight;
+          pctx.fillStyle='#0a1c2c'; pctx.fillRect(0,0,w,h);
+          const gap=70; const pipeW=40; const x=(frame*2)% (w+pipeW) - pipeW;
+          const top=20+Math.sin(frame*0.03)*18+10;
+          pctx.fillStyle='#2f8f4e'; pctx.fillRect(x,0,pipeW,top);
+          pctx.fillRect(x,top+gap,pipeW,h);
+          const by= h*0.5 + Math.sin(frame*0.15)*8;
+          pctx.fillStyle='#ffb44d'; pctx.beginPath(); pctx.ellipse(60,by,14,10,0,0,Math.PI*2); pctx.fill();
+          pctx.fillStyle='#ff7a3d'; pctx.beginPath(); pctx.moveTo(72,by-2); pctx.lineTo(82,by+1); pctx.lineTo(72,by+4); pctx.closePath(); pctx.fill();
+        }else if(kind==='stack'){
+          const w=cv.clientWidth,h=cv.clientHeight;
+          pctx.fillStyle='#0c2024'; pctx.fillRect(0,0,w,h);
+          const baseY=h-26; for(let i=0;i<4;i++){ pctx.fillStyle=`hsl(${i*35} 70% 60%)`; pctx.fillRect(30+i*8, baseY-i*16, 120-i*14, 14) }
+          const t = (Math.sin(frame*0.05)*0.5+0.5); pctx.fillStyle='hsl(140 70% 60%)'; pctx.fillRect(20 + t*120, baseY-70, 80, 14)
+        }else if(kind==='basket'){
+          const w=cv.clientWidth,h=cv.clientHeight;
+          pctx.fillStyle='#142234'; pctx.fillRect(0,0,w,h);
+          pctx.strokeStyle='#ffd27a'; pctx.lineWidth=4; pctx.beginPath(); pctx.arc(w-60,26,18,0,Math.PI*2); pctx.stroke();
+          const bx=20+ (frame%120); const by= h-18 - Math.abs(Math.sin(frame*0.06))*20;
+          pctx.fillStyle='#ff8b3d'; pctx.beginPath(); pctx.arc(bx,by,12,0,Math.PI*2); pctx.fill()
+        }else if(kind==='clicker'){
+          const w=cv.clientWidth,h=cv.clientHeight;
+          pctx.fillStyle='#102028'; pctx.fillRect(0,0,w,h);
+          pctx.beginPath(); pctx.arc(w*0.45,h*0.55,26 + Math.sin(frame*0.08)*3,0,Math.PI*2);
+          pctx.fillStyle='#1a2f38'; pctx.fill(); pctx.lineWidth=5; pctx.strokeStyle='#214451'; pctx.stroke();
+          pctx.fillStyle='#ffffff'; pctx.font='bold 14px system-ui'; pctx.textAlign='center'; pctx.fillText('+1', w*0.45, h*0.56+4)
+        }else{
+          const w=cv.clientWidth,h=cv.clientHeight;
+          pctx.fillStyle='#0e1730'; pctx.fillRect(0,0,w,h);
+          pctx.fillStyle='#6bb8ff'; pctx.font='bold 18px system-ui'; pctx.fillText('SOON', 14, h-10)
+        }
+        frame++; id=requestAnimationFrame(loop)
+      }
+      id=requestAnimationFrame(loop);
+      previews.set(cv,{stop:()=>cancelAnimationFrame(id),start:()=>{cancelAnimationFrame(id); id=requestAnimationFrame(loop)}})
+    })
+  }
+  function pausePreviews(){ previews.forEach(p=>p.stop()) }
+  function resumePreviews(){ previews.forEach(p=>p.start()) }
+  initPreviews();
+
+  // ========= Игровые движки =========
+  function FlappyEngine(){
+    const binder=makeBinder();
+    const isMobile = matchMedia('(pointer:coarse)').matches || navigator.maxTouchPoints>0;
+    const gravBase={easy:0.22,normal:0.26,hard:0.32}[state.difficulty];
+    const flapBase={easy:-5.4,normal:-4.9,hard:-4.4}[state.difficulty];
+    const speedBase={easy:1.9,normal:2.2,hard:2.6}[state.difficulty];
+    const gapMap={easy:190,normal:170,hard:150};
+    const spawnBase=95;
+
+    const speed = speedBase*(isMobile?1.18:1);
+    const grav = gravBase*(isMobile?1.10:1);
+    const flapV = flapBase*(isMobile?1.05:1);
+
+    let bird,pipes,frame,score,best,running,lastTop;
+
+    function reset(){
+      bird={x:90,y:canvas.height*0.45,w:32,h:26,vy:0,rot:0};
+      pipes=[]; frame=0; score=0; best=state.flappy_record||0; running=true; lastTop=canvas.height*0.4;
+    }
+
+    function spawn(){
+      const gap=gapMap[state.difficulty];
+      const maxTop=canvas.height-gap-100; const minTop=80;
+      const delta=(Math.random()*120-60);
+      lastTop=Math.max(minTop,Math.min(maxTop,lastTop+delta));
+      pipes.push({x:canvas.width+40,top:lastTop,gap,passed:false})
+    }
+    function over(){
+      running=false;
+      state.played_flappy++; state.flappy_score=Math.max(state.flappy_score||0,score);
+      if(score>best){ best=score; state.flappy_record=best }
+      saveState(); sfx.ok(); renderAchievements()
+    }
+    function tap(){ bird.vy=flapV; sfx.tap() }
+
+    function drawPipe(p){
+      const r=14; const w=70; const topH=p.top; const botY=p.top+p.gap;
+      let grad=ctx.createLinearGradient(p.x,0,p.x+w,0); grad.addColorStop(0,'#1e6b3a'); grad.addColorStop(0.5,'#2f8f4e'); grad.addColorStop(1,'#1a5a33');
+      ctx.fillStyle=grad; roundRect(ctx,p.x,0,w,topH,r,true,false);
+      let grad2=ctx.createLinearGradient(p.x,botY,p.x+w,canvas.height); grad2.addColorStop(0,'#1a5a33'); grad2.addColorStop(0.5,'#2f8f4e'); grad2.addColorStop(1,'#1e6b3a');
+      ctx.fillStyle=grad2; roundRect(ctx,p.x,botY,w,canvas.height-botY,r,true,false);
+      ctx.globalAlpha=0.15; ctx.fillStyle='#fff'; ctx.fillRect(p.x+6,0,6,topH); ctx.fillRect(p.x+6,botY,6,canvas.height-botY); ctx.globalAlpha=1;
+    }
+    function drawBird(){
+      ctx.save(); ctx.translate(bird.x+bird.w/2,bird.y+bird.h/2); bird.rot = Math.max(-0.6, Math.min(0.6, bird.vy/8)); ctx.rotate(bird.rot);
+      let bodyGrad=ctx.createRadialGradient(0,-4,2,0,0,22); bodyGrad.addColorStop(0,'#ffd77a'); bodyGrad.addColorStop(1,'#ffb44d');
+      ctx.fillStyle=bodyGrad; ctx.beginPath(); ctx.ellipse(0,0,16,12,0,0,Math.PI*2); ctx.fill();
+      const flap= Math.sin(frame*0.25)*6; ctx.save(); ctx.rotate(-0.3); ctx.translate(-4,0); ctx.fillStyle='#ffc25a'; ctx.beginPath(); ctx.ellipse(-6,flap,10,6,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.fillStyle='#ff7a3d'; ctx.beginPath(); ctx.moveTo(14,-2); ctx.lineTo(22,2); ctx.lineTo(14,6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(6,-4,4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(7,-4,2,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    function loop(){
+      ctx.clearRect(0,0,canvas.width,canvas.height); frame++;
+      ctx.fillStyle='#0b1a2a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      bird.vy+=grav; bird.y+=bird.vy;
+      const spacing=Math.round(spawnBase*(2.4/speed));
+      if(frame%spacing===0) spawn();
+      for(let i=pipes.length-1;i>=0;i--){ const p=pipes[i]; p.x-=speed; if(p.x<-120) pipes.splice(i,1) }
+      for(const p of pipes){
+        const w=70;
+        if(bird.x+bird.w>p.x && bird.x<p.x+w){
+          if(bird.y<p.top || bird.y+bird.h>p.top+p.gap){ over() }
+        }
+        if(!p.passed && p.x+w<bird.x){ p.passed=true; score++; if(score>best){ best=score; state.flappy_record=best; saveState() } }
+      }
+      if(bird.y>canvas.height-4 || bird.y<-60) over();
+      for(const p of pipes) drawPipe(p);
+      drawBird();
+      ctx.fillStyle='#fff'; ctx.font='20px system-ui'; ctx.fillText('Score: '+score,12,26); ctx.fillText('Best: '+best,12,50);
+      if(running) rafId=requestAnimationFrame(loop)
+    }
+
+    function start(){
+      reset();
+      const down=(e)=>{e.preventDefault();e.stopPropagation(); tap()};
+      const key=(e)=>{ if(e.code==='Space'){ e.preventDefault(); tap() } };
+      binder.on(canvas,'pointerdown',down,{passive:false});
+      binder.on(window,'keydown',key);
+      loop()
+    }
+    function stop(){ binder.offAll() }
+    return {start,stop}
+  }
+
+  function StackEngine(){
+    const binder=makeBinder();
+    const speedMap={easy:1.2,normal:2.0,hard:3.2};
+    const speed=speedMap[state.difficulty];
+    const H=44;
+    let blocks=[], baseY=canvas.height-90, moving=null, dir=1, score=0, best=state.stack_record||0, running=true, cam=0;
+
+    function colorFor(i){ const h=(i*35)%360; return `hsl(${h} 70% 60%)` }
+    function reset(){
+      const W=Math.max(140, canvas.width-360);
+      blocks=[{x:(canvas.width-W)/2, y:baseY, w:W, h:H, c:colorFor(0)}];
+      spawnNext(blocks[0].w)
+    }
+    function spawnNext(w){ dir = dir*-1; const startX = dir>0? -w-40 : canvas.width+40; moving={x:startX,y:baseY - blocks.length*H - 8,w,h:H,dir,c:colorFor(blocks.length)} }
+    function place(){
+      if(!moving) return; const last=blocks[blocks.length-1];
+      const y=baseY-blocks.length*H-8;
+      const left=Math.max(last.x, moving.x); const right=Math.min(last.x+last.w, moving.x+moving.w);
+      const overlap=Math.max(0, right-left);
+      if(overlap<=3){ gameOver(); return }
+      blocks.push({x:left, y, w:overlap, h:H, c:moving.c}); score++; if(score>best){ best=score; state.stack_record=best; saveState() }
+      spawnNext(overlap); sfx.tap(); adjustCamera()
+    }
+    function adjustCamera(){ const topY = baseY - blocks.length*H - H - 20; if(topY < 120){ cam = 120 - topY } }
+    function gameOver(){ running=false; state.played_stack++; state.stack_score=Math.max(state.stack_score||0,score); saveState(); sfx.ok() }
+
+    function loop(){
+      ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#0c2024'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      adjustCamera(); ctx.save(); ctx.translate(0, cam);
+      for(let i=0;i<blocks.length;i++){ const b=blocks[i]; ctx.fillStyle=b.c; roundRect(ctx,b.x,b.y,b.w,b.h,10,true,false) }
+      if(moving){
+        moving.x += speed * moving.dir;
+        if(moving.dir>0 && moving.x+moving.w > canvas.width-40) moving.dir=-1;
+        if(moving.dir<0 && moving.x < 40) moving.dir=1;
+        ctx.fillStyle=moving.c; roundRect(ctx,moving.x, moving.y, moving.w, H,10,true,false)
+      }
+      ctx.restore();
+      ctx.fillStyle='#fff'; ctx.font='20px system-ui'; ctx.fillText('Score: '+score,12,26); ctx.fillText('Best: '+best,12,50)
+      if(running) rafId=requestAnimationFrame(loop)
+    }
+
+    function start(){
+      reset();
+      const down=(e)=>{ e.preventDefault(); e.stopPropagation(); place() };
+      const key=(e)=>{ if(e.code==='Space'){ e.preventDefault(); place() } };
+      binder.on(canvas,'pointerdown',down,{passive:false});
+      binder.on(window,'keydown',key);
+      loop()
+    }
+    function stop(){ binder.offAll() }
+    return {start,stop}
+  }
+
+  function BasketEngine(){
+    const binder=makeBinder();
+    const gravity={easy:0.18,normal:0.24,hard:0.30}[state.difficulty];
+    const ballR=16;
+    let balls=[], rim={x:canvas.width-180,y:170,r:38}, score=0, best=state.basket_record||0, running=true, streak=0, drag=null;
+
+    function addBall(vx,vy,x,y){ balls.push({x:x||120,y:y||canvas.height-90,vx,vy}) }
+
+    function court(){
+      for(let i=0;i<Math.ceil(canvas.width/60);i++){ ctx.fillStyle= i%2? '#16263a' : '#142234'; ctx.fillRect(i*60,0,60,canvas.height) }
+      ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=2; ctx.strokeRect(60,canvas.height-240,canvas.width-120,200);
+      ctx.beginPath(); ctx.arc(180,canvas.height-140,60,0,Math.PI*2); ctx.stroke();
+
+      ctx.strokeStyle=getVar('--gold'); ctx.lineWidth=6;
+      ctx.beginPath(); ctx.arc(rim.x,rim.y,rim.r,0,Math.PI*2); ctx.stroke();
+
+      ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=1.2;
+      for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(rim.x-rim.r+i*10, rim.y+2); ctx.lineTo(rim.x-(rim.r*0.7)+i*9, rim.y+30); ctx.stroke() }
+      for(let i=0;i<7;i++){ ctx.beginPath(); ctx.moveTo(rim.x-(rim.r*0.7)+i*9, rim.y+30); ctx.lineTo(rim.x-rim.r+12+i*12, rim.y+56); ctx.stroke() }
+    }
+    function getVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name)||'#ffd27a' }
+
+    function drawBall(b){
+      ctx.save(); ctx.globalAlpha=0.25; ctx.beginPath(); ctx.arc(b.x+6,b.y+8,ballR,0,Math.PI*2); ctx.fillStyle='#000'; ctx.fill(); ctx.globalAlpha=1;
+      ctx.fillStyle='#ff8b3d'; ctx.beginPath(); ctx.arc(b.x,b.y,ballR,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#2c2c2c'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(b.x-ballR,b.y); ctx.lineTo(b.x+ballR,b.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(b.x,b.y-ballR); ctx.lineTo(b.x,b.y+ballR); ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.x,b.y,ballR,0.6,Math.PI+0.6); ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.x,b.y,ballR,-0.6,Math.PI-0.6,true); ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawAim(){
+      if(!drag) return;
+      const {x0,y0,xc,yc}=drag; const dx=(x0-xc); const dy=(y0-yc);
+      const scale=11; let vx=dx/scale, vy=dy/scale;
+      const max=18; const mag=Math.hypot(vx,vy); if(mag>max){ vx*=max/mag; vy*=max/mag }
+      const steps=30; let t=0;
+      for(let i=0;i<steps;i++){
+        t += 0.06 + i*0.004;
+        const px=x0 + vx*t; const py=y0 + vy*t + 0.5*gravity*(t*t*60);
+        if(py>canvas.height-10) break;
+        const r=2 + i*0.12; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.fill()
+      }
+    }
+
+    function loop(){
+      ctx.clearRect(0,0,canvas.width,canvas.height); court();
+      for(let i=balls.length-1;i>=0;i--){
+        const b=balls[i];
+        b.vy+=gravity; b.vx*=0.995; b.x+=b.vx; b.y+=b.vy;
+
+        // столкновение с обручем
+        const dx=b.x-rim.x, dy=b.y-rim.y; const dist=Math.hypot(dx,dy);
+        if(dist < rim.r+ballR && dist>rim.r-6){
+          const nx=dx/dist, ny=dy/dist; const dot=b.vx*nx + b.vy*ny;
+          if(dot<0){ b.vx -= 2*dot*nx; b.vy -= 2*dot*ny; b.vx*=0.85; b.vy*=0.85 }
+        }
+        // попадание
+        if(dist<rim.r-8 && b.vy>0){
+          score++; balls.splice(i,1); streak++; state.basket_streak=Math.max(state.basket_streak||0,streak);
+          if(score>best){ best=score; state.basket_record=best; saveState() } sfx.ok(); continue
+        }
+        // выход
+        if(b.y>canvas.height+60 || b.x>canvas.width+80 || b.x<-80){ balls.splice(i,1); streak=0 }
+        drawBall(b)
+      }
+      drawAim();
+      ctx.fillStyle='#fff'; ctx.font='20px system-ui'; ctx.fillText('Score: '+score,12,26); ctx.fillText('Best: '+best,12,50);
+      if(running) rafId=requestAnimationFrame(loop)
+    }
+
+    function start(){
+      const down=(e)=>{ e.preventDefault(); const r=canvas.getBoundingClientRect(); const p={x:e.clientX-r.left, y:e.clientY-r.top}; drag={x0:p.x,y0:p.y,xc:p.x,yc:p.y} };
+      const move=(e)=>{ if(!drag) return; e.preventDefault(); const r=canvas.getBoundingClientRect(); drag.xc=e.clientX-r.left; drag.yc=e.clientY-r.top };
+      const up=(e)=>{ if(!drag) return; e.preventDefault(); const r=canvas.getBoundingClientRect(); const p={x:e.clientX-r.left, y:e.clientY-r.top};
+        const dx=(drag.x0-p.x); const dy=(drag.y0-p.y);
+        const scale=11; let vx=dx/scale, vy=dy/scale; const max=18;
+        const mag=Math.hypot(vx,vy); if(mag>max){ vx*=max/mag; vy*=max/mag }
+        addBall(vx,vy,drag.x0,drag.y0); drag=null; sfx.tap()
+      };
+      binder.on(canvas,'pointerdown',down,{passive:false});
+      binder.on(canvas,'pointermove',move,{passive:false});
+      binder.on(canvas,'pointerup',up,{passive:false});
+      loop()
+    }
+    function stop(){ binder.offAll() }
+    return {start,stop}
+  }
+
+  function ClickerEngine(){
+    const binder=makeBinder();
+    let points=state.clicker_points||0, power=state.clicker_power||1, upgCost=state.clicker_upgrade_cost||12, total=state.clicker_total||0, autolocked=state.clicker_autolocked||false, autoused=state.clicker_autoused||false;
+    const autoPrice=12000, autoGain=2000, autoDuration=60; // 2000/мин
+    let autoTimer=null, autoInUse=false, autoLeft=0;
+    let floats=[];
+
+    function layout(){
+      const pad=24; const cx=canvas.width*0.45; const cy=canvas.height*0.5;
+      const R=Math.min(canvas.width,canvas.height)*0.18; const shopW=260; const right=canvas.width-pad-shopW;
+      const btnH=50; const gap=10; const y0=canvas.height - pad - btnH*2 - gap;
+      return {cx,cy,R, shop:{x:right,y:y0,w:shopW,h:btnH*2+gap}, upg:{x:right,y:y0,w:shopW,h:btnH}, auto:{x:right,y:y0+btnH+gap,w:shopW,h:btnH} }
+    }
+
+    function draw(){
+      const {cx,cy,R,shop,upg,auto}=layout();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#0f1f24'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='rgba(255,255,255,0.06)'; roundRect(ctx,16,16,canvas.width-32,64,12,true,false);
+      ctx.fillStyle='#fff'; ctx.font='24px system-ui'; ctx.fillText('Очки: '+Math.floor(points),28,56);
+      ctx.font='16px system-ui'; ctx.fillStyle='var(--muted)'; ctx.fillText('Нажимай по кнопке, улучшай силу и используй автокликер.',28,84);
+
+      ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fillStyle= '#1a2f38'; ctx.fill(); ctx.lineWidth=8; ctx.strokeStyle='#214451'; ctx.stroke();
+      ctx.font='22px system-ui'; ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText('+ '+power, cx, cy+8); ctx.textAlign='start';
+
+      roundRect(ctx,shop.x,shop.y,shop.w,shop.h,12,true,false);
+
+      ctx.fillStyle='#0b1220'; roundRect(ctx,upg.x+6,upg.y+6,upg.w-12,upg.h-12,10,true,false);
+      ctx.fillStyle='#fff'; ctx.font='18px system-ui'; ctx.fillText('Улучшить силу +2',upg.x+16,upg.y+32);
+      ctx.font='14px system-ui'; ctx.fillStyle='var(--muted)'; ctx.fillText('Цена: '+upgCost,upg.x+16,upg.y+50);
+
+      ctx.fillStyle= autolocked? '#0a0f17' : '#0b1220';
+      roundRect(ctx,auto.x+6,auto.y+6,auto.w-12,auto.h-12,10,true,false);
+      ctx.fillStyle='#fff'; ctx.font='18px system-ui';
+      ctx.fillText( autolocked? 'Автокликер использован' : `Автокликер (${autoPrice})`, auto.x+16, auto.y+30);
+
+      if(autoInUse){
+        const p=(autoLeft/autoDuration); const w=(auto.w-12)*p;
+        ctx.fillStyle='rgba(46,204,113,0.35)'; roundRect(ctx,auto.x+6,auto.y+auto.h-16,w,10,6,true,false);
+        ctx.fillStyle='#fff'; ctx.font='12px system-ui'; ctx.fillText('Осталось: '+Math.ceil(autoLeft)+'с', auto.x+16, auto.y+auto.h-20)
+      }
+
+      if(floats.length){
+        ctx.font='18px system-ui';
+        for(let i=floats.length-1;i>=0;i--){
+          const f=floats[i]; ctx.globalAlpha=f.a; ctx.fillStyle='rgba(255,255,255,0.9)';
+          ctx.fillText(f.t,f.x,f.y); f.y+=f.vy; f.a-=0.015; if(f.a<=0) floats.splice(i,1)
+        }
+        ctx.globalAlpha=1
+      }
+    }
+
+    function startAuto(){
+      autoInUse=true; autoLeft=autoDuration; const inc=autoGain/autoDuration;
+      if(autoTimer) clearInterval(autoTimer);
+      autoTimer=setInterval(()=>{
+        points+=inc; autoLeft-=1;
+        if(autoLeft<=0){ clearInterval(autoTimer); autoInUse=false; autolocked=true; sfx.ok(); persist() }
+      },1000)
+    }
+
+    function persist(){
+      state.clicker_points=Math.floor(points); state.clicker_power=power; state.clicker_upgrade_cost=upgCost;
+      state.clicker_total=total; state.clicker_autolocked=autolocked; state.clicker_autoused=autoused; saveState(); renderAchievements()
+    }
+
+    function loop(){ draw(); rafId=requestAnimationFrame(loop) }
+
+    function start(){
+      const down=(e)=>{
+        e.preventDefault(); const r=canvas.getBoundingClientRect(); const x=e.clientX-r.left; const y=e.clientY-r.top;
+        const {cx,cy,R,upg,auto}=layout();
+        if((x-cx)*(x-cx)+(y-cy)*(y-cy) <= R*R){
+          points+=power; total++; floats.push({t:'+'+power,x,y,a:1,vy:-0.8}); sfx.tap(); persist(); return
+        }
+        if(x>upg.x && x<upg.x+upg.w && y>upg.y && y<upg.y+upg.h){
+          if(points>=upgCost){ points-=upgCost; power+=2; upgCost=Math.round(upgCost*1.7); sfx.ok(); persist() } else { sfx.click() }
+          return
+        }
+        if(x>auto.x && x<auto.x+auto.w && y>auto.y && y<auto.y+auto.h){
+          if(autolocked||autoInUse){ sfx.click(); return }
+          if(points>=autoPrice){ points-=autoPrice; startAuto(); autoused=true; persist() } else { sfx.click() }
+        }
+      };
+      const key=(e)=>{ if(e.code==='Space'){ e.preventDefault(); points+=power; total++; sfx.tap(); persist() } };
+      binder.on(canvas,'pointerdown',down,{passive:false});
+      binder.on(window,'keydown',key);
+      loop()
+    }
+    function stop(){ binder.offAll() ; if(autoTimer) clearInterval(autoTimer); persist() }
+    return {start,stop}
+  }
+
+  // ========= Утилиты =========
+  function roundRect(ctx,x,y,w,h,r,fill,stroke){
+    if(typeof r==='undefined') r=6;
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r);
+    if(fill) ctx.fill(); if(stroke) ctx.stroke();
+  }
+
+  // ========= Автор-ссылка (проверка) =========
+  const authorLink = document.getElementById('authorLink');
+  try{ const url=new URL(authorLink.href); if(!url.hostname.includes('instagram.com')){ authorLink.textContent='Создатель: @ibarrwqm (ссылка не верна)'; authorLink.href='#'; authorLink.style.opacity=0.7 } }
+  catch(e){ authorLink.textContent='Создатель: @ibarrwqm (ссылка не верна)'; authorLink.href='#'; authorLink.style.opacity=0.7 }
+
+  // ========= Инициируем =========
+  document.getElementById('achInGame').addEventListener('click', ()=>{ achOverlay.classList.add('open') });
+  renderAchievements();
+
+  // блокируем «протыкание» кликов под оверлеем
+  overlay.addEventListener('pointerdown', e=>{
+    if(e.target===overlay) { e.preventDefault(); e.stopPropagation(); }
+  }, {passive:false});
+  </script>
+</body>
+</html>
